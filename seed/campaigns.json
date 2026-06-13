@@ -1,0 +1,32 @@
+[
+  {
+    "title": "Case study: cutting a depot's scheduling time by 60%",
+    "content": "How we helped a regional transport operator replace three spreadsheets with one automated booking pipeline. Full write-up on the blog.",
+    "platforms": ["linkedin", "twitter", "facebook"],
+    "scheduled_offset_hours": -48
+  },
+  {
+    "title": "Friday automation tip",
+    "content": "If you copy data between two apps more than twice a week, it can almost certainly be automated. Here's where to start.",
+    "platforms": ["linkedin", "twitter"],
+    "scheduled_offset_hours": -20
+  },
+  {
+    "title": "We're hiring an automation engineer",
+    "content": "Join a small team building practical automation for SMEs. Remote-friendly, real ownership. Details in comments.",
+    "platforms": ["linkedin", "facebook"],
+    "scheduled_offset_hours": -3
+  },
+  {
+    "title": "Webinar: invoicing on autopilot",
+    "content": "Live walkthrough of an accounts-payable automation that reads supplier invoices straight out of the inbox. Register free.",
+    "platforms": ["linkedin", "twitter", "facebook"],
+    "scheduled_offset_hours": 18
+  },
+  {
+    "title": "Monday motivation",
+    "content": "Three small workflows worth automating this week: meeting notes, lead follow-ups, and weekly reporting.",
+    "platforms": ["twitter", "facebook"],
+    "scheduled_offset_hours": 72
+  }
+]

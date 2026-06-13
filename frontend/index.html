@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trinops Marketing Scheduler</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Trinops Marketing Scheduler</h1>
+      <div class="subtitle">Write once, publish to LinkedIn, X and Facebook</div>
+    </div>
+    <nav class="tabs">
+      <a class="tab active" href="index.html">Campaigns</a>
+      <a class="tab" href="leads.html">Leads</a>
+    </nav>
+  </header>
+
+  <section id="cards">
+    <div class="card"><div class="card-label">Queued</div><div class="card-value" id="card-queued">–</div></div>
+    <div class="card"><div class="card-label">Published</div><div class="card-value ok" id="card-published">–</div></div>
+    <div class="card"><div class="card-label">Partial</div><div class="card-value warn" id="card-partial">–</div></div>
+    <div class="card"><div class="card-label">Failed</div><div class="card-value danger" id="card-failed">–</div></div>
+  </section>
+
+  <main>
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Upcoming &amp; recent</h2>
+        <div class="filters" id="campaign-filters">
+          <button class="filter active" data-status="">All</button>
+          <button class="filter" data-status="QUEUED">Queued</button>
+          <button class="filter" data-status="PUBLISHED">Published</button>
+          <button class="filter" data-status="PARTIAL">Partial</button>
+          <button class="filter" data-status="FAILED">Failed</button>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr><th>#</th><th>Title</th><th>Scheduled</th><th>Platforms</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody id="campaign-rows"></tbody>
+      </table>
+      <div id="campaign-empty" class="empty-state hidden">No campaigns match this filter.</div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Schedule</h2><div class="muted" id="calendar-month"></div></div>
+      <div id="calendar"></div>
+    </section>
+  </main>
+
+  <div id="toast" class="hidden"></div>
+  <script src="app.js"></script>
+  <script>initCampaignsPage();</script>
+</body>
+</html>

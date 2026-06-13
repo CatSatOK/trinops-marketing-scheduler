@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trinops Marketing Scheduler — Leads</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Lead inbox</h1>
+      <div class="subtitle">Inbound enquiries, scored and routed by rules</div>
+    </div>
+    <nav class="tabs">
+      <a class="tab" href="index.html">Campaigns</a>
+      <a class="tab active" href="leads.html">Leads</a>
+    </nav>
+  </header>
+
+  <section id="cards">
+    <div class="card"><div class="card-label">Hot</div><div class="card-value danger" id="card-hot">–</div></div>
+    <div class="card"><div class="card-label">Warm</div><div class="card-value warn" id="card-warm">–</div></div>
+    <div class="card"><div class="card-label">Cold</div><div class="card-value" id="card-cold">–</div></div>
+    <div class="card"><div class="card-label">Total</div><div class="card-value" id="card-total">–</div></div>
+  </section>
+
+  <main>
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Leads</h2>
+        <div class="filters" id="lead-filters">
+          <button class="filter active" data-category="">All</button>
+          <button class="filter" data-category="HOT">Hot</button>
+          <button class="filter" data-category="WARM">Warm</button>
+          <button class="filter" data-category="COLD">Cold</button>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Priority</th><th>Company</th><th>Contact</th><th>Interest</th><th>Score</th><th>Category</th><th>Routed to</th><th>Source</th></tr>
+        </thead>
+        <tbody id="lead-rows"></tbody>
+      </table>
+      <div id="lead-empty" class="empty-state hidden">No leads match this filter.</div>
+    </section>
+  </main>
+
+  <div id="toast" class="hidden"></div>
+  <script src="app.js"></script>
+  <script>initLeadsPage();</script>
+</body>
+</html>
