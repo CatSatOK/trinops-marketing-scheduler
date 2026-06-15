@@ -96,13 +96,13 @@ class TestRetry:
         publish_campaign(session, campaign, get_adapters(settings))
         assert campaign.status == CampaignStatus.PARTIAL
 
-        # the facebook outage clears — retry now succeeds
-        settings.demo_fail_platform = ""
+        # the flaky platform fails attempt 1, so a retry (attempt 2) recovers
         retry_platform(session, campaign, "facebook", get_adapters(settings))
 
         assert campaign.status == CampaignStatus.PUBLISHED
         fb = next(r for r in campaign.results if r.platform == "facebook")
         assert fb.status == PostStatus.PUBLISHED
+        assert fb.attempts == 2
 
     def test_retry_does_not_touch_published_platforms(self, session, settings):
         campaign = _campaign(["linkedin", "facebook"], offset_hours=-1)
@@ -111,7 +111,6 @@ class TestRetry:
         publish_campaign(session, campaign, get_adapters(settings))
         linkedin_id = next(r for r in campaign.results if r.platform == "linkedin").platform_post_id
 
-        settings.demo_fail_platform = ""
         retry_platform(session, campaign, "facebook", get_adapters(settings))
 
         # linkedin's original receipt is untouched

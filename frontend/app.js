@@ -51,9 +51,13 @@ function initCampaignsPage() {
     const byPlatform = Object.fromEntries(campaign.results.map((r) => [r.platform, r]));
     return campaign.platforms
       .map((p) => {
-        const status = byPlatform[p] ? byPlatform[p].status : "PENDING";
-        const title = byPlatform[p] && byPlatform[p].error_message ? ` title="${byPlatform[p].error_message}"` : "";
-        return `<span class="pill pill-${status}"${title}>${p}</span>`;
+        const r = byPlatform[p];
+        const status = r ? r.status : "PENDING";
+        const tip = r
+          ? (r.error_message || `published (attempt ${r.attempts})`)
+          : "not attempted yet";
+        const retries = r && r.attempts > 1 ? ` <span class="attempts">×${r.attempts}</span>` : "";
+        return `<span class="pill pill-${status}" title="${tip}">${p}${retries}</span>`;
       })
       .join(" ");
   }
@@ -169,6 +173,66 @@ function initCampaignsPage() {
   }
 
   bindFilters("campaign-filters", "status", (value) => { filter = value; refresh(); });
+
+  // ---- New campaign modal --------------------------------------------------
+
+  const backdrop = document.getElementById("modal-backdrop");
+
+  async function openModal() {
+    const platforms = await api("/campaigns/platforms");
+    const box = document.getElementById("platform-choices");
+    box.innerHTML = "";
+    for (const p of platforms) {
+      const label = document.createElement("label");
+      label.className = "choice";
+      label.innerHTML = `<input type="checkbox" name="platform" value="${p}" checked> ${p}`;
+      box.appendChild(label);
+    }
+    backdrop.classList.remove("hidden");
+  }
+
+  function closeModal() {
+    backdrop.classList.add("hidden");
+    document.getElementById("campaign-form").reset();
+  }
+
+  async function submitCampaign(event) {
+    event.preventDefault();
+    const form = event.target;
+    const platforms = [...form.querySelectorAll('input[name="platform"]:checked')].map((c) => c.value);
+    if (platforms.length === 0) {
+      toast("Pick at least one platform", true);
+      return;
+    }
+    const payload = {
+      title: form.title.value.trim(),
+      content: form.content.value.trim(),
+      media_url: form.media_url.value.trim() || null,
+      platforms,
+    };
+    // datetime-local is local time; send as UTC ISO so it matches the scheduler
+    if (form.scheduled_at.value) {
+      payload.scheduled_at = new Date(form.scheduled_at.value).toISOString();
+    }
+    try {
+      await api("/campaigns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      toast("Campaign created and queued");
+      closeModal();
+      refresh();
+    } catch (err) {
+      toast(err.message, true);
+    }
+  }
+
+  document.getElementById("new-campaign-btn").addEventListener("click", openModal);
+  document.getElementById("modal-cancel").addEventListener("click", closeModal);
+  backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeModal(); });
+  document.getElementById("campaign-form").addEventListener("submit", submitCampaign);
+
   refresh();
   setInterval(refresh, 30000);
 }
@@ -195,10 +259,53 @@ function initLeadsPage() {
         <td>${l.score}</td>
         <td><span class="badge badge-${l.category}">${l.category}</span></td>
         <td class="muted">${l.routed_to}</td>
-        <td class="muted">${l.source}</td>`;
+        <td class="notes-cell"></td>`;
+
+      const notes = document.createElement("textarea");
+      notes.className = "notes-input";
+      notes.rows = 2;
+      notes.placeholder = "Add notes…";
+      notes.value = l.notes || "";
+      // save on blur only when the text actually changed
+      let original = notes.value;
+      notes.addEventListener("blur", () => {
+        if (notes.value === original) return;
+        saveNotes(l.id, notes.value).then(() => { original = notes.value; });
+      });
+      tr.querySelector(".notes-cell").appendChild(notes);
       tbody.appendChild(tr);
     }
     return leads;
+  }
+
+  async function saveNotes(id, notes) {
+    try {
+      await api(`/leads/${id}/notes`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes }),
+      });
+      toast("Notes saved");
+    } catch (err) {
+      toast(err.message, true);
+    }
+  }
+
+  async function loadScoringExplainer() {
+    const body = document.getElementById("scoring-body");
+    if (!body || body.dataset.loaded) return;
+    const rubric = await api("/leads/scoring");
+    const signal = (s) => `
+      <div class="rubric-signal">
+        <div class="rubric-name">${s.name}</div>
+        ${s.bands.map((b) => `<div class="rubric-band"><span>${b.label}</span><span class="rubric-pts">+${b.points}</span></div>`).join("")}
+      </div>`;
+    const cat = (c) => `<li><span class="badge badge-${c.category}">${c.category}</span> ${c.rule} → priority ${c.priority}</li>`;
+    body.innerHTML = `
+      <p class="muted">Each lead is scored from three structured fields on the form (no AI). Points add up to a maximum of ${rubric.max_score}.</p>
+      <div class="rubric-signals">${rubric.signals.map(signal).join("")}</div>
+      <ul class="rubric-cats">${rubric.categories.map(cat).join("")}</ul>`;
+    body.dataset.loaded = "1";
   }
 
   function updateCards(leads) {
@@ -216,6 +323,7 @@ function initLeadsPage() {
   }
 
   bindFilters("lead-filters", "category", (value) => { filter = value; refresh(); });
+  loadScoringExplainer();
   refresh();
   setInterval(refresh, 30000);
 }

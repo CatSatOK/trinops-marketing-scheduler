@@ -25,7 +25,7 @@ class FacebookAdapter:
     def validate_credentials(self) -> bool:
         return bool(self._page_id and self._token)
 
-    def post(self, draft: DraftPost) -> PostReceipt:
+    def post(self, draft: DraftPost, attempt: int = 1) -> PostReceipt:
         if not self.validate_credentials():
             raise PostError("facebook: missing page id or access token")
         # Photo posts and plain feed posts use different endpoints.

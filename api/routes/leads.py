@@ -4,15 +4,15 @@ import json
 from collections.abc import Iterator
 from datetime import datetime
 
-from fastapi import APIRouter, Depends
-from pydantic import BaseModel, ConfigDict
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, ConfigDict, Field
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from marketing.config import get_settings
 from marketing.database import session_scope
-from marketing.lead_qualifier import qualify
+from marketing.lead_qualifier import qualify, scoring_rubric
 from marketing.models import Lead, LeadCategory
 
 router = APIRouter(prefix="/leads", tags=["leads"])
@@ -43,7 +43,18 @@ class LeadOut(BaseModel):
     category: LeadCategory
     priority: int
     routed_to: str
+    notes: str | None
     created_at: datetime
+
+
+class NotesUpdate(BaseModel):
+    notes: str = Field(max_length=2000)
+
+
+@router.get("/scoring")
+def get_scoring_rubric() -> dict:
+    """How the lead score is calculated — drives the dashboard explainer."""
+    return scoring_rubric()
 
 
 @router.post("/webhook", response_model=LeadOut, status_code=201)
@@ -65,6 +76,7 @@ def capture_lead(
         category=scored.category,
         priority=scored.priority,
         routed_to=scored.routed_to,
+        notes=form.get("notes"),
     )
     session.add(lead)
     session.flush()
@@ -80,3 +92,16 @@ def list_leads(
     if category is not None:
         stmt = stmt.where(Lead.category == category)
     return list(session.scalars(stmt))
+
+
+@router.patch("/{lead_id}/notes", response_model=LeadOut)
+def update_notes(
+    lead_id: int,
+    payload: NotesUpdate,
+    session: Session = Depends(db_session),
+) -> Lead:
+    lead = session.get(Lead, lead_id)
+    if lead is None:
+        raise HTTPException(status_code=404, detail="lead not found")
+    lead.notes = payload.notes.strip() or None
+    return lead

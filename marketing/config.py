@@ -24,9 +24,10 @@ class Settings(BaseSettings):
     # its name here — nothing in the scheduler or publisher changes.
     enabled_platforms: list[str] = ["linkedin", "twitter", "facebook"]
 
-    # In demo mode this platform's posts fail deterministically so the
-    # partial-failure path stays demonstrable.
-    demo_fail_platform: str = "facebook"
+    # In demo mode this platform's posts fail on the FIRST attempt only, then
+    # succeed on retry — a simulated transient outage so the PARTIAL status and
+    # the per-platform retry button can both be demonstrated end to end.
+    demo_flaky_platform: str = "facebook"
 
     # Platform credentials — only read when demo_mode is false.
     linkedin_access_token: str = ""

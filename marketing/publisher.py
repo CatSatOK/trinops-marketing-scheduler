@@ -21,16 +21,18 @@ def _draft(campaign: Campaign) -> DraftPost:
 
 
 def _publish_one(
-    campaign: Campaign, platform: str, adapter: PlatformAdapter | None
+    campaign: Campaign, platform: str, adapter: PlatformAdapter | None, attempt: int
 ) -> PostResult:
-    result = PostResult(campaign_id=campaign.id, platform=platform, status=PostStatus.PENDING)
+    result = PostResult(
+        campaign_id=campaign.id, platform=platform, status=PostStatus.PENDING, attempts=attempt
+    )
     if adapter is None:
         result.status = PostStatus.FAILED
         result.error_message = f"no adapter registered for {platform!r}"
         logger.error("campaign %d: %s", campaign.id, result.error_message)
         return result
     try:
-        receipt = adapter.post(_draft(campaign))
+        receipt = adapter.post(_draft(campaign), attempt=attempt)
     except PostError as exc:
         result.status = PostStatus.FAILED
         result.error_message = str(exc)
@@ -66,12 +68,15 @@ def publish_campaign(
     for platform in campaign.platforms:
         if platform in already_done:
             continue
-        # Drop any prior FAILED/PENDING attempt so there is one row per platform.
-        # Removing from the relationship (delete-orphan cascade) keeps the
-        # in-memory collection consistent, which session.delete alone would not.
-        for stale in [r for r in campaign.results if r.platform == platform]:
+        # Drop any prior FAILED/PENDING attempt so there is one row per platform,
+        # carrying its attempt count forward. Removing from the relationship
+        # (delete-orphan cascade) keeps the in-memory collection consistent,
+        # which session.delete alone would not.
+        prior = [r for r in campaign.results if r.platform == platform]
+        attempt = max((r.attempts for r in prior), default=0) + 1
+        for stale in prior:
             campaign.results.remove(stale)
-        campaign.results.append(_publish_one(campaign, platform, adapters.get(platform)))
+        campaign.results.append(_publish_one(campaign, platform, adapters.get(platform), attempt))
 
     session.flush()
     _recompute_status(campaign)
@@ -85,10 +90,12 @@ def retry_platform(
     """Re-run a single platform that previously failed."""
     if platform not in campaign.platforms:
         raise ValueError(f"{platform!r} is not a target of campaign {campaign.id}")
-    for stale in [r for r in campaign.results if r.platform == platform]:
+    prior = [r for r in campaign.results if r.platform == platform]
+    attempt = max((r.attempts for r in prior), default=0) + 1
+    for stale in prior:
         campaign.results.remove(stale)
     session.flush()
-    campaign.results.append(_publish_one(campaign, platform, adapters.get(platform)))
+    campaign.results.append(_publish_one(campaign, platform, adapters.get(platform), attempt))
     session.flush()
     _recompute_status(campaign)
     return campaign

@@ -73,6 +73,7 @@ def load_seed_leads(session: Session, settings: Settings) -> int:
                 category=scored.category,
                 priority=scored.priority,
                 routed_to=scored.routed_to,
+                notes=form.get("notes"),
             )
         )
     logger.info("seeded %d lead(s)", len(records))

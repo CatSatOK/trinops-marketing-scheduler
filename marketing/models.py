@@ -88,6 +88,7 @@ class PostResult(Base):
         Enum(PostStatus, native_enum=False, length=20),
         default=PostStatus.PENDING,
     )
+    attempts: Mapped[int] = mapped_column(Integer, default=1)  # 1 on first publish, +1 per retry
     platform_post_id: Mapped[str | None] = mapped_column(String(200))
     error_message: Mapped[str | None] = mapped_column(String(500))
     posted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -121,6 +122,8 @@ class Lead(Base):
     )
     priority: Mapped[int] = mapped_column(Integer, default=3, index=True)  # 1 = highest
     routed_to: Mapped[str] = mapped_column(String(200))
+    # Free-text staff annotations about the company/contact — editable in the inbox.
+    notes: Mapped[str | None] = mapped_column(Text)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 

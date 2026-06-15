@@ -51,10 +51,17 @@ def test_demo_post_writes_file_and_returns_receipt(settings):
     assert len(files) == 1
 
 
-def test_demo_fail_platform_raises(settings):
-    adapter = DemoAdapter("facebook", settings)  # demo_fail_platform == facebook
+def test_flaky_platform_fails_first_attempt_then_succeeds(settings):
+    adapter = DemoAdapter("facebook", settings)  # demo_flaky_platform == facebook
     with pytest.raises(PostError):
-        adapter.post(DRAFT)
+        adapter.post(DRAFT, attempt=1)
+    receipt = adapter.post(DRAFT, attempt=2)  # retry recovers
+    assert receipt.platform_post_id.startswith("facebook-")
+
+
+def test_non_flaky_platform_succeeds_on_first_attempt(settings):
+    adapter = DemoAdapter("linkedin", settings)
+    assert adapter.post(DRAFT, attempt=1).platform_post_id.startswith("linkedin-")
 
 
 def test_real_adapters_report_missing_credentials(settings):

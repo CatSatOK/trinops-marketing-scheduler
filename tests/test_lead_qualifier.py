@@ -1,6 +1,6 @@
 """Lead qualifier tests: scoring bands, categories, routing, value parsing."""
 
-from marketing.lead_qualifier import _max_number, qualify
+from marketing.lead_qualifier import _max_number, qualify, scoring_rubric
 from marketing.models import LeadCategory
 
 
@@ -59,3 +59,17 @@ def test_empty_form_is_cold(settings):
     assert result.score == 0
     assert result.category == LeadCategory.COLD
     assert result.routed_to == settings.lead_default_contact
+
+
+def test_scoring_rubric_matches_a_max_score_lead(settings):
+    rubric = scoring_rubric()
+    # the top band of each signal should sum to the advertised max_score
+    top = sum(s["bands"][0]["points"] for s in rubric["signals"])
+    assert top == rubric["max_score"]
+    # and an all-top-band lead should actually hit it and be HOT
+    best = qualify(
+        {"budget": "£50,000", "company_size": "999", "service_interest": "automation"},
+        settings,
+    )
+    assert best.score == rubric["max_score"]
+    assert best.category == LeadCategory.HOT

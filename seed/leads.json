@@ -7,7 +7,8 @@
     "budget": "£10,000-£20,000",
     "company_size": "250",
     "service_interest": "automation",
-    "message": "We run a logistics operation and want to automate our order intake."
+    "message": "We run a logistics operation and want to automate our order intake.",
+    "notes": "Referred by an existing client. Decision maker is the ops director; wants a call this week."
   },
   {
     "source": "website-contact-form",
@@ -17,7 +18,8 @@
     "budget": "£6,000",
     "company_size": "80",
     "service_interest": "transport",
-    "message": "Looking at scheduling optimisation for a fleet of 40 vehicles."
+    "message": "Looking at scheduling optimisation for a fleet of 40 vehicles.",
+    "notes": "Currently using spreadsheets. Budget signed off for Q3."
   },
   {
     "source": "linkedin-lead-gen",

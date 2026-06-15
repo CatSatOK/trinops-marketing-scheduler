@@ -67,9 +67,13 @@ optional extensions.
 
 ### Dashboard
 
-Two-page admin view (vanilla JS, no framework): a campaign queue with per-platform status
-pills, publish-now and per-platform retry actions, and a month calendar of scheduled posts;
-plus a lead inbox sorted by priority with category badges and routing.
+Two-page admin view (vanilla JS, no framework):
+
+- **Campaigns** - a queue with per-platform status pills (and retry counts), a "New campaign"
+  form, publish-now and per-platform retry actions, and a month calendar of scheduled posts.
+- **Leads** - an inbox sorted by priority with category badges and routing, editable per-lead
+  notes, and an expandable "How is the lead score worked out?" panel rendered from the live
+  scoring rules (so it can never drift from the code).
 
 ## Quick start (demo mode)
 
@@ -85,8 +89,9 @@ Then open <http://localhost:8000>. Demo mode:
   future (still queued)
 - publishes to a local `data/published/<platform>/` folder instead of real platform APIs, so
   every post is inspectable as JSON
-- makes one platform (`DEMO_FAIL_PLATFORM`, default `facebook`) fail on purpose, so the
-  `PARTIAL` status and per-platform retry button are visible end to end
+- simulates a transient outage on one platform (`DEMO_FLAKY_PLATFORM`, default `facebook`):
+  its first publish attempt fails - so a campaign lands in `PARTIAL` - but clicking retry
+  succeeds, showing the full fail → retry → `PUBLISHED` recovery
 - seeds six leads spanning HOT, WARM and COLD, scored by the real qualifier
 
 Try the lead webhook:
@@ -135,11 +140,14 @@ interface - nothing in the scheduler or adapter pattern changes:
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/campaigns?status=` | List campaigns with per-platform results |
+| GET | `/campaigns/platforms` | Platforms a campaign can target (drives the form) |
 | POST | `/campaigns` | Create and queue a campaign |
 | POST | `/campaigns/{id}/publish` | Publish a queued campaign now |
 | POST | `/campaigns/{id}/retry/{platform}` | Retry a single failed platform |
 | POST | `/leads/webhook` | Capture + score an inbound form submission |
 | GET | `/leads?category=` | Lead inbox, sorted by priority |
+| GET | `/leads/scoring` | The scoring rubric (drives the explainer) |
+| PATCH | `/leads/{id}/notes` | Save staff notes on a lead |
 
 Interactive docs at <http://localhost:8000/docs>.
 

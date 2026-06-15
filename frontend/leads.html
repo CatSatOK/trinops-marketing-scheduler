@@ -38,11 +38,18 @@
       </div>
       <table>
         <thead>
-          <tr><th>Priority</th><th>Company</th><th>Contact</th><th>Interest</th><th>Score</th><th>Category</th><th>Routed to</th><th>Source</th></tr>
+          <tr><th>Priority</th><th>Company</th><th>Contact</th><th>Interest</th><th>Score</th><th>Category</th><th>Routed to</th><th>Notes</th></tr>
         </thead>
         <tbody id="lead-rows"></tbody>
       </table>
       <div id="lead-empty" class="empty-state hidden">No leads match this filter.</div>
+    </section>
+
+    <section class="panel">
+      <details id="scoring-explainer">
+        <summary>How is the lead score worked out?</summary>
+        <div id="scoring-body" class="scoring-body"></div>
+      </details>
     </section>
   </main>
 

@@ -25,7 +25,7 @@ class TwitterAdapter:
     def validate_credentials(self) -> bool:
         return bool(self._token)
 
-    def post(self, draft: DraftPost) -> PostReceipt:
+    def post(self, draft: DraftPost, attempt: int = 1) -> PostReceipt:
         if not self.validate_credentials():
             raise PostError("twitter: missing access token")
         text = draft.content

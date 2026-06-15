@@ -21,7 +21,7 @@ def settings(tmp_path: Path) -> Settings:
         _env_file=None,
         demo_mode=True,
         enabled_platforms=["linkedin", "twitter", "facebook"],
-        demo_fail_platform="facebook",
+        demo_flaky_platform="facebook",
         published_dir=str(tmp_path / "published"),
         database_url=f"sqlite:///{tmp_path}/test.db",
     )

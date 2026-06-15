@@ -25,7 +25,7 @@ class LinkedInAdapter:
     def validate_credentials(self) -> bool:
         return bool(self._token and self._author)
 
-    def post(self, draft: DraftPost) -> PostReceipt:
+    def post(self, draft: DraftPost, attempt: int = 1) -> PostReceipt:
         if not self.validate_credentials():
             raise PostError("linkedin: missing access token or author URN")
         body = {

@@ -27,6 +27,7 @@ class PostResultOut(BaseModel):
 
     platform: str
     status: PostStatus
+    attempts: int
     platform_post_id: str | None
     error_message: str | None
     posted_at: datetime | None
@@ -59,6 +60,12 @@ class CampaignCreate(BaseModel):
         if unknown:
             raise ValueError(f"unknown platform(s): {', '.join(unknown)}")
         return value
+
+
+@router.get("/platforms", response_model=list[str])
+def list_platforms() -> list[str]:
+    """Platforms a campaign can target — used to build the create form."""
+    return available_platforms()
 
 
 @router.get("", response_model=list[CampaignOut])

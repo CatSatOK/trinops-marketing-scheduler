@@ -29,12 +29,15 @@
     <section class="panel">
       <div class="panel-head">
         <h2>Upcoming &amp; recent</h2>
-        <div class="filters" id="campaign-filters">
-          <button class="filter active" data-status="">All</button>
-          <button class="filter" data-status="QUEUED">Queued</button>
-          <button class="filter" data-status="PUBLISHED">Published</button>
-          <button class="filter" data-status="PARTIAL">Partial</button>
-          <button class="filter" data-status="FAILED">Failed</button>
+        <div class="head-actions">
+          <div class="filters" id="campaign-filters">
+            <button class="filter active" data-status="">All</button>
+            <button class="filter" data-status="QUEUED">Queued</button>
+            <button class="filter" data-status="PUBLISHED">Published</button>
+            <button class="filter" data-status="PARTIAL">Partial</button>
+            <button class="filter" data-status="FAILED">Failed</button>
+          </div>
+          <button id="new-campaign-btn" class="btn btn-accept">+ New campaign</button>
         </div>
       </div>
       <table>
@@ -51,6 +54,26 @@
       <div id="calendar"></div>
     </section>
   </main>
+
+  <div id="modal-backdrop" class="hidden">
+    <div class="modal">
+      <h2>New campaign</h2>
+      <form id="campaign-form">
+        <label>Title<input name="title" required maxlength="200" placeholder="e.g. Product launch announcement"></label>
+        <label>Content<textarea name="content" required rows="4" placeholder="What do you want to post?"></textarea></label>
+        <label>Media URL (optional)<input name="media_url" type="url" placeholder="https://…"></label>
+        <label>Schedule for<input name="scheduled_at" type="datetime-local"></label>
+        <fieldset>
+          <legend>Platforms</legend>
+          <div id="platform-choices" class="platform-choices"></div>
+        </fieldset>
+        <div class="modal-actions">
+          <button type="button" id="modal-cancel" class="btn btn-ghost">Cancel</button>
+          <button type="submit" class="btn btn-accept">Create &amp; queue</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <div id="toast" class="hidden"></div>
   <script src="app.js"></script>

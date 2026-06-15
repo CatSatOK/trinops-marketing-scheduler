@@ -38,6 +38,47 @@ class QualifiedLead:
     reasons: list[str] = field(default_factory=list)
 
 
+def scoring_rubric() -> dict:
+    """The scoring rules in a display-ready form — single source of truth for the
+    dashboard explainer, so the UI can never drift from the actual logic."""
+    return {
+        "signals": [
+            {
+                "name": "Budget",
+                "bands": [
+                    {"label": "£10,000 or more", "points": BUDGET_BANDS[0][1]},
+                    {"label": "£5,000 – £9,999", "points": BUDGET_BANDS[1][1]},
+                    {"label": "£1,000 – £4,999", "points": BUDGET_BANDS[2][1]},
+                    {"label": "under £1,000", "points": BUDGET_BANDS[3][1]},
+                ],
+            },
+            {
+                "name": "Company size",
+                "bands": [
+                    {"label": "200+ staff", "points": SIZE_BANDS[0][1]},
+                    {"label": "50 – 199 staff", "points": SIZE_BANDS[1][1]},
+                    {"label": "10 – 49 staff", "points": SIZE_BANDS[2][1]},
+                    {"label": "under 10 staff", "points": SIZE_BANDS[3][1]},
+                ],
+            },
+            {
+                "name": "Service interest",
+                "bands": [
+                    {"label": "a service we offer", "points": KNOWN_SERVICE_POINTS},
+                    {"label": "other / unspecified service", "points": UNKNOWN_SERVICE_POINTS},
+                    {"label": "no service given", "points": 0},
+                ],
+            },
+        ],
+        "categories": [
+            {"category": "HOT", "rule": f"score ≥ {HOT_THRESHOLD}", "priority": 1},
+            {"category": "WARM", "rule": f"{WARM_THRESHOLD} ≤ score < {HOT_THRESHOLD}", "priority": 2},
+            {"category": "COLD", "rule": f"score < {WARM_THRESHOLD}", "priority": 3},
+        ],
+        "max_score": BUDGET_BANDS[0][1] + SIZE_BANDS[0][1] + KNOWN_SERVICE_POINTS,
+    }
+
+
 def _max_number(value) -> float | None:
     """Pull the largest number out of a value like '£5,000-£10,000' or '200+'."""
     if value is None:

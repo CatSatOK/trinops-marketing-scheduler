@@ -2,9 +2,10 @@
 
 Instead of calling a platform API, it writes the rendered post to
 `data/published/<platform>/` so the demo is fully inspectable without any
-credentials. One platform (DEMO_FAIL_PLATFORM) is made to fail deterministically
-so the partial-failure path — PARTIAL campaign status and the per-platform retry
-button — is exercised end to end.
+credentials. One platform (DEMO_FLAKY_PLATFORM) simulates a transient outage:
+its first publish attempt fails, but a retry succeeds. That exercises the whole
+path — PARTIAL campaign status, the per-platform retry button, and the recovery
+to PUBLISHED — end to end.
 """
 
 import json
@@ -22,14 +23,17 @@ class DemoAdapter:
     def __init__(self, platform: str, settings: Settings) -> None:
         self.name = platform
         self._dir = Path(settings.published_dir) / platform
-        self._fail = settings.demo_fail_platform == platform
+        self._flaky = settings.demo_flaky_platform == platform
 
     def validate_credentials(self) -> bool:
         return True
 
-    def post(self, draft: DraftPost) -> PostReceipt:
-        if self._fail:
-            raise PostError(f"{self.name}: simulated publish failure (demo)")
+    def post(self, draft: DraftPost, attempt: int = 1) -> PostReceipt:
+        # Simulated transient outage: the first attempt fails, a retry succeeds.
+        if self._flaky and attempt <= 1:
+            raise PostError(
+                f"{self.name}: simulated transient outage on first attempt (demo) — retry to recover"
+            )
         self._dir.mkdir(parents=True, exist_ok=True)
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
         post_id = f"{self.name}-{stamp}"

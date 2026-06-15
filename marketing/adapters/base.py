@@ -42,6 +42,10 @@ class PlatformAdapter(Protocol):
         """Return True when the adapter has everything it needs to publish."""
         ...
 
-    def post(self, draft: DraftPost) -> PostReceipt:
-        """Publish `draft`. Returns a receipt, or raises PostError on failure."""
+    def post(self, draft: DraftPost, attempt: int = 1) -> PostReceipt:
+        """Publish `draft`. Returns a receipt, or raises PostError on failure.
+
+        `attempt` is 1 on the first publish and increments on each retry; real
+        adapters can ignore it (it is used by the demo adapter to simulate a
+        transient outage that clears on retry)."""
         ...
