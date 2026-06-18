@@ -42,6 +42,18 @@ const fmtDateTime = (iso) =>
     day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
   });
 
+// Lead fields arrive from the public webhook, so escape anything going into
+// innerHTML to stop a crafted company/name/notes value injecting markup.
+function esc(value) {
+  if (value === null || value === undefined) return "";
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 // ---- Campaigns page --------------------------------------------------------
 
 function initCampaignsPage() {
@@ -57,7 +69,7 @@ function initCampaignsPage() {
           ? (r.error_message || `published (attempt ${r.attempts})`)
           : "not attempted yet";
         const retries = r && r.attempts > 1 ? ` <span class="attempts">×${r.attempts}</span>` : "";
-        return `<span class="pill pill-${status}" title="${tip}">${p}${retries}</span>`;
+        return `<span class="pill pill-${status}" title="${esc(tip)}">${esc(p)}${retries}</span>`;
       })
       .join(" ");
   }
@@ -73,7 +85,7 @@ function initCampaignsPage() {
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${c.id}</td>
-        <td>${c.title}</td>
+        <td>${esc(c.title)}</td>
         <td class="muted">${fmtDateTime(c.scheduled_at)}</td>
         <td class="platforms">${postBadges(c)}</td>
         <td><span class="badge badge-${c.status}">${c.status}</span></td>
@@ -253,12 +265,12 @@ function initLeadsPage() {
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td><span class="prio prio-${l.priority}">P${l.priority}</span></td>
-        <td>${l.company || "<span class='muted'>unknown</span>"}</td>
-        <td class="muted">${l.name || "–"}<br><span class="email">${l.email || ""}</span></td>
-        <td>${l.service_interest || "<span class='muted'>unspecified</span>"}</td>
+        <td>${l.company ? esc(l.company) : "<span class='muted'>unknown</span>"}</td>
+        <td class="muted">${l.name || "–"}<br><span class="email">${esc(l.email)}</span></td>
+        <td>${l.service_interest ? esc(l.service_interest) : "<span class='muted'>unspecified</span>"}</td>
         <td>${l.score}</td>
         <td><span class="badge badge-${l.category}">${l.category}</span></td>
-        <td class="muted">${l.routed_to}</td>
+        <td class="muted">${esc(l.routed_to)}</td>
         <td class="notes-cell"></td>`;
 
       const notes = document.createElement("textarea");

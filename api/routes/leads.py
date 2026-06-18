@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from api.auth import require_admin
 from marketing.config import get_settings
 from marketing.database import session_scope
 from marketing.lead_qualifier import qualify, scoring_rubric
@@ -83,7 +84,7 @@ def capture_lead(
     return lead
 
 
-@router.get("", response_model=list[LeadOut])
+@router.get("", response_model=list[LeadOut], dependencies=[Depends(require_admin)])
 def list_leads(
     category: LeadCategory | None = None,
     session: Session = Depends(db_session),
@@ -94,7 +95,7 @@ def list_leads(
     return list(session.scalars(stmt))
 
 
-@router.patch("/{lead_id}/notes", response_model=LeadOut)
+@router.patch("/{lead_id}/notes", response_model=LeadOut, dependencies=[Depends(require_admin)])
 def update_notes(
     lead_id: int,
     payload: NotesUpdate,
