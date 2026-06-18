@@ -1,16 +1,19 @@
 """Lead endpoints: inbound form webhook + scored lead inbox."""
 
 import json
+import secrets
 from collections.abc import Iterator
 from datetime import datetime
+from functools import lru_cache
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from api.auth import require_admin
+from api.ratelimit import RateLimiter
 from marketing.config import get_settings
 from marketing.database import session_scope
 from marketing.lead_qualifier import qualify, scoring_rubric
@@ -22,6 +25,52 @@ router = APIRouter(prefix="/leads", tags=["leads"])
 def db_session() -> Iterator[Session]:
     with session_scope() as session:
         yield session
+
+
+@lru_cache
+def _webhook_limiter() -> RateLimiter:
+    # Built once from settings. Tests that change the limit call cache_clear().
+    return RateLimiter(get_settings().webhook_rate_limit_per_minute, 60.0)
+
+
+async def webhook_guard(request: Request) -> None:
+    """Protect the unauthenticated lead webhook: per-IP rate limit, body-size
+    cap, and an optional shared secret. Runs before the payload is parsed."""
+    settings = get_settings()
+
+    # Rate limit by caller IP first — cheapest check, caps abuse volume.
+    client = request.client.host if request.client else "unknown"
+    if not _webhook_limiter().allow(client):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="rate limit exceeded",
+            headers={"Retry-After": "60"},
+        )
+
+    # Shared secret, when configured (open by default for demo / any provider).
+    if settings.webhook_secret:
+        provided = request.headers.get("x-webhook-secret")
+        if provided is None or not secrets.compare_digest(provided, settings.webhook_secret):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="invalid or missing webhook secret",
+            )
+
+    # Payload size cap. Trust the Content-Length header for a fast reject, then
+    # confirm against the bytes actually received (the header can lie).
+    cap = settings.webhook_max_bytes
+    declared = request.headers.get("content-length")
+    if declared is not None and declared.isdigit() and int(declared) > cap:
+        raise HTTPException(
+            status_code=413,  # Content Too Large
+            detail="payload too large",
+        )
+    body = await request.body()  # cached by Starlette, reused when the model parses
+    if len(body) > cap:
+        raise HTTPException(
+            status_code=413,  # Content Too Large
+            detail="payload too large",
+        )
 
 
 class LeadWebhook(BaseModel):
@@ -58,7 +107,12 @@ def get_scoring_rubric() -> dict:
     return scoring_rubric()
 
 
-@router.post("/webhook", response_model=LeadOut, status_code=201)
+@router.post(
+    "/webhook",
+    response_model=LeadOut,
+    status_code=201,
+    dependencies=[Depends(webhook_guard)],
+)
 def capture_lead(
     payload: LeadWebhook,
     session: Session = Depends(db_session),

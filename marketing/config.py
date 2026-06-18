@@ -18,6 +18,16 @@ class Settings(BaseSettings):
     # Protects staff/admin endpoints when demo_mode is false (sent as X-API-Key).
     admin_api_key: str = ""
 
+    # Inbound lead webhook hardening. The webhook is unauthenticated by design
+    # (any form provider can POST to it), so it gets its own guards:
+    #  - rate limit per caller IP (per minute); 0 disables the limit
+    #  - hard cap on request body size in bytes (reject anything larger)
+    #  - optional shared secret: when set, callers must send it as the
+    #    X-Webhook-Secret header. Empty (the demo default) leaves it open.
+    webhook_rate_limit_per_minute: int = 60
+    webhook_max_bytes: int = 16384
+    webhook_secret: str = ""
+
     database_url: str = "sqlite:///./data/marketing.db"
 
     # How often the dispatcher checks the queue for campaigns whose time has come
