@@ -13,7 +13,7 @@ from marketing.seed_loader import load_seed_campaigns, load_seed_leads
 from api.routes.campaigns import router as campaigns_router
 from api.routes.leads import router as leads_router
 from api.auth import require_admin
-from api.security import SecurityHeadersMiddleware
+from api.security import SecurityHeadersMiddleware, docs_urls
 
 # Strict, nonce-free policy: everything from same origin, no inline scripts
 # (the dashboard pages dispatch from app.js, not inline <script>), nothing framed.
@@ -36,7 +36,13 @@ async def lifespan(app: FastAPI):
     stop_scheduler()
 
 
-app = FastAPI(title="Trinops Marketing Scheduler", lifespan=lifespan)
+# Interactive docs only in demo mode (see docs_urls). FastAPI never leaks
+# tracebacks unless debug=True, which is never set, so production 500s stay generic.
+app = FastAPI(
+    title="Trinops Marketing Scheduler",
+    lifespan=lifespan,
+    **docs_urls(get_settings().demo_mode),
+)
 app.add_middleware(SecurityHeadersMiddleware, csp=CSP)
 
 
