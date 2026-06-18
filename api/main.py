@@ -13,6 +13,15 @@ from marketing.seed_loader import load_seed_campaigns, load_seed_leads
 from api.routes.campaigns import router as campaigns_router
 from api.routes.leads import router as leads_router
 from api.auth import require_admin
+from api.security import SecurityHeadersMiddleware
+
+# Strict, nonce-free policy: everything from same origin, no inline scripts
+# (the dashboard pages dispatch from app.js, not inline <script>), nothing framed.
+CSP = (
+    "default-src 'self'; script-src 'self'; style-src 'self'; "
+    "img-src 'self' data:; connect-src 'self'; base-uri 'self'; "
+    "form-action 'self'; frame-ancestors 'none'; object-src 'none'"
+)
 
 
 @asynccontextmanager
@@ -28,6 +37,14 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Trinops Marketing Scheduler", lifespan=lifespan)
+app.add_middleware(SecurityHeadersMiddleware, csp=CSP)
+
+
+@app.get("/health", tags=["meta"])
+def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
 app.include_router(campaigns_router, dependencies=[Depends(require_admin)])
 app.include_router(leads_router)
 app.mount("/", StaticFiles(directory="frontend", html=True), name="dashboard")

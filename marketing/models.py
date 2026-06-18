@@ -3,7 +3,7 @@
 import enum
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -113,6 +113,9 @@ class Lead(Base):
     company: Mapped[str | None] = mapped_column(String(200))
     email: Mapped[str | None] = mapped_column(String(200))
     service_interest: Mapped[str | None] = mapped_column(String(100))
+    # GDPR lawful basis: did the data subject tick the marketing-consent box on
+    # the form? Captured from the webhook payload and surfaced in the inbox.
+    consent: Mapped[bool] = mapped_column(Boolean, default=False)
 
     score: Mapped[int] = mapped_column(Integer, default=0)
     category: Mapped[LeadCategory] = mapped_column(

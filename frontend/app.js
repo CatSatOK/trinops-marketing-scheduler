@@ -339,3 +339,12 @@ function initLeadsPage() {
   refresh();
   setInterval(refresh, 30000);
 }
+
+// ---- Page bootstrap --------------------------------------------------------
+// Each page sets <body data-page="..."> and we dispatch from here, so no inline
+// <script> is needed and the Content-Security-Policy can forbid inline scripts.
+document.addEventListener("DOMContentLoaded", function () {
+  const page = document.body.dataset.page;
+  if (page === "campaigns") initCampaignsPage();
+  else if (page === "leads") initLeadsPage();
+});

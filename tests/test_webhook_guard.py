@@ -1,11 +1,9 @@
 """Lead webhook hardening: per-IP rate limit, body-size cap, shared secret.
 
 The RateLimiter is exercised directly (deterministic via injected `now`); the
-guard is exercised end to end through the real app with a TestClient.
+guard is exercised end to end through the real app via the `client` fixture
+(defined in conftest.py).
 """
-
-import pytest
-from fastapi.testclient import TestClient
 
 from api.ratelimit import RateLimiter
 
@@ -41,34 +39,6 @@ def test_limiter_zero_disables():
 
 
 # --- guard integration tests ------------------------------------------------
-
-
-@pytest.fixture
-def client(tmp_path, monkeypatch):
-    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path}/test.db")
-    monkeypatch.setenv("PUBLISHED_DIR", str(tmp_path / "published"))
-    monkeypatch.setenv("DISPATCH_INTERVAL_MINUTES", "60")
-    # keep startup empty + predictable
-    monkeypatch.setenv("SEED_CAMPAIGNS_FILE", str(tmp_path / "no-campaigns.json"))
-    monkeypatch.setenv("SEED_LEADS_FILE", str(tmp_path / "no-leads.json"))
-
-    def _reset():
-        import api.routes.leads as leads
-        import marketing.database as database
-        from marketing.config import get_settings
-
-        get_settings.cache_clear()
-        leads._webhook_limiter.cache_clear()
-        database._engine = None
-        database._SessionLocal = None
-
-    _reset()
-    from api.main import app
-
-    with TestClient(app) as test_client:
-        yield test_client
-
-    _reset()
 
 
 def test_webhook_open_by_default(client):

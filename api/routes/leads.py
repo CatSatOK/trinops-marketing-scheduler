@@ -73,6 +73,14 @@ async def webhook_guard(request: Request) -> None:
         )
 
 
+def _truthy(value: object) -> bool:
+    """Read a consent flag from an arbitrary form provider: handles real bools
+    and the usual string encodings (on/true/yes/1)."""
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"1", "true", "yes", "on", "y"}
+
+
 class LeadWebhook(BaseModel):
     """Inbound form payload. Extra fields are kept and stored verbatim, so any
     form provider works without a schema change."""
@@ -89,6 +97,7 @@ class LeadOut(BaseModel):
     company: str | None
     email: str | None
     service_interest: str | None
+    consent: bool
     score: int
     category: LeadCategory
     priority: int
@@ -127,6 +136,8 @@ def capture_lead(
         company=form.get("company"),
         email=form.get("email"),
         service_interest=scored.service_interest,
+        # GDPR consent: did the form carry an affirmative marketing-consent flag?
+        consent=_truthy(form.get("consent")),
         score=scored.score,
         category=scored.category,
         priority=scored.priority,
@@ -160,3 +171,19 @@ def update_notes(
         raise HTTPException(status_code=404, detail="lead not found")
     lead.notes = payload.notes.strip() or None
     return lead
+
+
+@router.delete("/{lead_id}", status_code=204, dependencies=[Depends(require_admin)])
+def erase_lead(
+    lead_id: int,
+    session: Session = Depends(db_session),
+) -> None:
+    """GDPR right to erasure: hard-delete a lead and its stored raw payload.
+
+    Removes the row entirely (including the verbatim form data) rather than
+    flagging it, so no personal data is retained after the request.
+    """
+    lead = session.get(Lead, lead_id)
+    if lead is None:
+        raise HTTPException(status_code=404, detail="lead not found")
+    session.delete(lead)
